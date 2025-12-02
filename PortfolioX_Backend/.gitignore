@@ -1,0 +1,2 @@
+start_celery_beat.bat start_celery_worker.bat start_django.bat start_redis.bat stop_all.bat test_redis.bat
+start_all_services.ps1 test_api.ps1
