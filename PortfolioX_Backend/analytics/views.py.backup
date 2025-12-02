@@ -1,28 +1,28 @@
-﻿from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+﻿from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from portfolios.models import Portfolio
 from analytics.models import AnalysisResult
 from analytics.services.analyzer import PortfolioAnalyzer
 from datetime import datetime, timedelta
 
+User = get_user_model()
+
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_portfolio_analysis(request, portfolio_id):
     """Get latest analysis for a portfolio"""
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, user=request.user)
+    # Temporary: Get first user for testing
+    user = User.objects.first()
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     
     analysis = AnalysisResult.objects.filter(
         portfolio_id=portfolio_id
     ).order_by('-analysis_date').first()
     
     if not analysis:
-        return Response({
-            'error': 'No analysis found. Run analysis first.',
-            'portfolio_id': portfolio_id
-        }, status=404)
+        return Response({'error': 'No analysis found. Run analysis first.'}, status=404)
     
     return Response({
         'portfolio_id': portfolio.id,
@@ -59,47 +59,40 @@ def get_portfolio_analysis(request, portfolio_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def run_portfolio_analysis(request, portfolio_id):
     """Trigger analysis for a portfolio"""
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, user=request.user)
+    user = User.objects.first()
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     
-    try:
-        result = PortfolioAnalyzer.analyze_portfolio(portfolio_id)
-        
-        if result:
-            return Response({
-                'status': 'success',
-                'message': 'Analysis completed successfully',
-                'portfolio_id': portfolio_id,
-                'portfolio_name': portfolio.name,
-                'analysis_date': datetime.now().date(),
-                'health_score': result.get('health_score'),
-                'diversification_score': result.get('diversification_score'),
-            })
-        else:
-            return Response({
-                'status': 'error',
-                'error': 'Analysis failed',
-                'portfolio_id': portfolio_id
-            }, status=500)
-            
-    except Exception as e:
+    result = PortfolioAnalyzer.analyze_portfolio(portfolio_id)
+    
+    if result:
         return Response({
-            'status': 'error',
-            'error': str(e),
-            'portfolio_id': portfolio_id
-        }, status=500)
+            'message': 'Analysis completed successfully',
+            'portfolio_id': portfolio_id,
+            'analysis_date': datetime.now().date(),
+            'health_score': result.get('health_score'),
+        })
+    else:
+        return Response({'error': 'Analysis failed'}, status=500)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_portfolio_performance(request, portfolio_id):
     """Get historical performance data"""
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, user=request.user)
+    user = User.objects.first()
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     
     period = request.GET.get('period', '1y')
-    periods_map = {'1m': 30, '3m': 90, '6m': 180, '1y': 365, 'all': 3650}
+    
+    periods_map = {
+        '1m': 30,
+        '3m': 90,
+        '6m': 180,
+        '1y': 365,
+        'all': 3650
+    }
+    
     days = periods_map.get(period, 365)
     start_date = datetime.now().date() - timedelta(days=days)
     
@@ -107,37 +100,35 @@ def get_portfolio_performance(request, portfolio_id):
         portfolio_id=portfolio_id,
         analysis_date__gte=start_date
     ).order_by('analysis_date').values(
-        'analysis_date', 'return_ytd', 'health_score', 
-        'diversification_score', 'sharpe_ratio'
+        'analysis_date',
+        'return_ytd',
+        'health_score',
+        'diversification_score',
+        'sharpe_ratio'
     )
     
     return Response({
         'portfolio_id': portfolio_id,
-        'portfolio_name': portfolio.name,
         'period': period,
         'data': list(analyses)
     })
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_recommendations(request, portfolio_id):
     """Get recommendations for a portfolio"""
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, user=request.user)
+    user = User.objects.first()
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     
     analysis = AnalysisResult.objects.filter(
         portfolio_id=portfolio_id
     ).order_by('-analysis_date').first()
     
     if not analysis:
-        return Response({
-            'error': 'No analysis found',
-            'portfolio_id': portfolio_id
-        }, status=404)
+        return Response({'error': 'No analysis found'}, status=404)
     
     return Response({
         'portfolio_id': portfolio_id,
-        'portfolio_name': portfolio.name,
         'analysis_date': analysis.analysis_date,
-        'recommendations': analysis.recommendations or []
+        'recommendations': analysis.recommendations
     })
