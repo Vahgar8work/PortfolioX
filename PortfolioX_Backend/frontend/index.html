@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PortfolioX Analytics</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-chart-line"></i>
+                <h1>PortfolioX</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="javascript:void(0)" class="nav-link active" onclick="showSection('dashboard')">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="javascript:void(0)" class="nav-link" onclick="showSection('portfolios')">
+                    <i class="fas fa-briefcase"></i> Portfolios
+                </a>
+                <a href="javascript:void(0)" class="nav-link" onclick="showSection('analytics')">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </a>
+                <a href="javascript:void(0)" class="nav-link" onclick="showSection('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+            <div class="user-menu">
+                <span id="userName">Guest User</span>
+                <button onclick="logout()" class="btn-logout" type="button">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="content-section active">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Dashboard Overview</h2>
+                    <button onclick="refreshDashboard()" class="btn btn-primary" type="button">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalValue">â‚¹0.00</h3>
+                            <p>Total Portfolio Value</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalGain">â‚¹0.00</h3>
+                            <p>Total Gain/Loss</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalReturn">0.00%</h3>
+                            <p>Total Return</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="portfolioCount">0</h3>
+                            <p>Active Portfolios</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Portfolio Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentActivity" class="activity-list">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Portfolios Section -->
+        <section id="portfolios-section" class="content-section">
+            <div class="container">
+                <div class="page-header">
+                    <h2>My Portfolios</h2>
+                    <button onclick="createPortfolio()" class="btn btn-primary" type="button">
+                        <i class="fas fa-plus"></i> New Portfolio
+                    </button>
+                </div>
+
+                <div id="portfoliosList" class="portfolio-grid">
+                    <div class="loading">Loading portfolios...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics-section" class="content-section">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Portfolio Analytics</h2>
+                    <div class="portfolio-selector">
+                        <select id="analyticsPortfolioSelect" onchange="loadAnalytics()">
+                            <option value="">Select Portfolio</option>
+                        </select>
+                        <button onclick="triggerAnalysis()" class="btn btn-secondary" type="button">
+                            <i class="fas fa-play"></i> Run Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <div id="analyticsContent">
+                    <div class="empty-state">
+                        <i class="fas fa-chart-line"></i>
+                        <p>Select a portfolio to view analytics</p>
+                    </div>
+                </div>
+
+                <!-- Analytics Results -->
+                <div id="analyticsResults" style="display:none;">
+                    <!-- Risk Metrics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Risk Metrics</h3>
+                            <span id="healthScore" class="badge">Health: N/A</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <label>Sharpe Ratio</label>
+                                    <span id="sharpeRatio">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Volatility</label>
+                                    <span id="volatility">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Max Drawdown</label>
+                                    <span id="maxDrawdown">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Value at Risk (95%)</label>
+                                    <span id="var">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Alpha</label>
+                                    <span id="alpha">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Beta</label>
+                                    <span id="beta">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Returns -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Returns Overview</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="returns-grid">
+                                <div class="return-card">
+                                    <label>1 Day</label>
+                                    <span id="return1d">-</span>
+                                </div>
+                                <div class="return-card">
+                                    <label>1 Week</label>
+                                    <span id="return1w">-</span>
+                                </div>
+                                <div class="return-card">
+                                    <label>1 Month</label>
+                                    <span id="return1m">-</span>
+                                </div>
+                                <div class="return-card">
+                                    <label>3 Months</label>
+                                    <span id="return3m">-</span>
+                                </div>
+                                <div class="return-card">
+                                    <label>6 Months</label>
+                                    <span id="return6m">-</span>
+                                </div>
+                                <div class="return-card">
+                                    <label>1 Year</label>
+                                    <span id="return1y">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>AI Recommendations</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="recommendations" class="recommendations-list">
+                                <div class="loading">Loading recommendations...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings-section" class="content-section">
+            <div class="container">
+                <div class="page-header">
+                    <h2>API Settings</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Backend Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="apiBaseUrl">API Base URL</label>
+                            <input type="text" id="apiBaseUrl" class="form-control" 
+                                   placeholder="http://localhost:8000" value="http://localhost:8000">
+                        </div>
+                        <div class="form-group">
+                            <label for="apiToken">Authentication Token (Optional)</label>
+                            <input type="password" id="apiToken" class="form-control" 
+                                   placeholder="Enter your API token">
+                        </div>
+                        <button onclick="saveSettings()" class="btn btn-primary" type="button">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        <button onclick="testConnection()" class="btn btn-secondary" type="button">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>API Endpoints Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="apiEndpointsTable">
+                                <tr><td colspan="3">Click "Test Connection" to check endpoints</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
